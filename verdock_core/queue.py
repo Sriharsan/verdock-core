@@ -19,7 +19,7 @@ HELD, RESUMED, DROPPED = "held, offline", "resumed", "dropped"
 class HeldQueue:
     def __init__(self, path):
         self.path = path
-        with connect(path) as db:
+        with closing(connect(path)) as db:
             db.execute("CREATE TABLE IF NOT EXISTS held(key TEXT PRIMARY KEY, operation TEXT NOT NULL, request_id TEXT NOT NULL,"
                        " params TEXT NOT NULL, state TEXT NOT NULL, note TEXT NOT NULL DEFAULT '')")
 
