@@ -16,6 +16,9 @@ Policy schema (version 1)::
         retry: safe                      # optional, "never" (default) or "safe"
     caps:                                # optional
       per_customer_per_day_minor: 10000  # optional, integer >= 0
+    egress:                              # optional; without it nothing may leave
+      allow_hosts:                       # host names the egress gateway may reach
+        - api-m.sandbox.paypal.com
 
 Amounts are integers in minor units (cents for USD).
 
@@ -56,7 +59,9 @@ RETRY_VALUES = ("never", "safe")
 
 _OPERATION_KEYS = {"level", "max_amount_minor", "approval_above_minor", "currency", "retry"}
 _CAP_KEYS = {"per_customer_per_day_minor"}
-_TOP_KEYS = {"version", "operations", "caps"}
+_TOP_KEYS = {"version", "operations", "caps", "egress"}
+_EGRESS_KEYS = {"allow_hosts"}
+_HOST_RE = re.compile(r"[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?)+")
 _CURRENCY_RE = re.compile(r"[A-Z]{3}")
 
 
@@ -305,6 +310,15 @@ def validate_policy(raw):
         policy["caps"] = {
             key: _non_negative_int(value, "caps.%s" % key) for key, value in caps.items()
         }
+    if "egress" in raw:
+        egress = raw["egress"]
+        if not isinstance(egress, dict):
+            raise PolicyError("policy: 'egress' must be a mapping")
+        _reject_unknown(egress, _EGRESS_KEYS, "egress")
+        hosts = egress.get("allow_hosts", [])
+        if not isinstance(hosts, list) or not all(isinstance(h, str) and _HOST_RE.fullmatch(h) for h in hosts):
+            raise PolicyError("egress.allow_hosts must be a list of lower case host names")
+        policy["egress"] = {"allow_hosts": sorted(set(hosts))}
     return policy
 
 

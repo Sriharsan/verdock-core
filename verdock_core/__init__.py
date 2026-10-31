@@ -1,4 +1,4 @@
-"""verdock_core: policy, approvals, invariants, outcomes and signed receipts.
+"""verdock_core: policy, approvals, invariants, outcomes, signed receipts and an egress gateway.
 
 Import the submodules directly, for example::
 
@@ -8,6 +8,6 @@ Import the submodules directly, for example::
 
 from .errors import PolicyError, Refused
 
-__version__ = "0.1.0"
+__version__ = "0.2.0"
 
 __all__ = ["__version__", "PolicyError", "Refused"]

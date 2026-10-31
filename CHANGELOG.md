@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.2.0 (2026-10-31)
+
+* `egress`: CONNECT only egress gateway with a host allowlist from the policy and a signed receipt for every allowed, blocked or offline request.
+* `queue`: `HeldQueue` for actions held while offline, keeping their request id.
+* `policy`: optional `egress.allow_hosts` section.
+* `python -m verdock_core egress` command.
+
 ## 0.1.0 (2026-10-31)
 
 First release.

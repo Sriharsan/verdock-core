@@ -94,6 +94,26 @@ const report = await verifyLog(text, trustedPublicKeyHex);
 
 The browser needs WebCrypto Ed25519 support.
 
+## Egress gateway and held queue
+
+For apps whose agents run on a network isolated container network (Docker `internal: true`). The gateway is the only process on both networks.
+
+* `verdock_core.egress.EgressGateway`: an HTTP CONNECT proxy. It opens a tunnel only to host names in the policy's `egress.allow_hosts`, only on port 443, and signs a receipt for every request: `verdock.egress.allowed` (host, bytes each way), `verdock.egress.blocked`, `verdock.egress.offline`. TLS stays end to end, so the gateway sees host names and byte counts, not bodies or credentials.
+* A refusal (403 blocked, 502 upstream unreachable) is answered before any byte reaches the provider, so the app knows the action did not happen.
+* `verdock_core.queue.HeldQueue`: actions that could not leave are held as "held, offline" with their stable request id. The app reads the provider's record first, then resumes each one with the same request id.
+
+```
+python -m verdock_core egress --policy policy.yaml --listen 0.0.0.0:8080 --receipts egress.ndjson --seed egress.seed
+```
+
+```yaml
+egress:
+  allow_hosts:
+    - api-m.sandbox.paypal.com
+```
+
+A policy without `egress` lets nothing out. Adding `egress` changes the policy hash; policies without it hash as before.
+
 ## Tests
 
 ```
@@ -112,4 +132,5 @@ The receipt tests reproduce the draft's Appendix A vectors byte for byte.
 * Numbers in receipts must be integers within plus or minus 2^53 minus 1. Amounts are integers in minor units with a currency string.
 * The Ed25519 code is not constant time. Use it on hosts you control.
 * ReceiptLog expects one writer per file.
+* The egress gateway checks host names, not IP addresses, and trusts the container network to make it the only way out. It does not inspect TLS.
 * SQLite stores are safe across threads and processes on one machine. They are not a distributed database.
